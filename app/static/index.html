@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Codebase Assistant</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f13; color: #e1e1e6; min-height: 100vh; }
+.header { padding: 24px 40px; border-bottom: 1px solid #1e1e2e; display: flex; align-items: center; gap: 12px; }
+.header h1 { font-size: 18px; font-weight: 600; color: #cdd6f4; }
+.header span { font-size: 12px; background: #1e1e2e; color: #89b4fa; padding: 3px 10px; border-radius: 20px; }
+.container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+.section { background: #1e1e2e; border: 1px solid #2a2a3e; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+.section h2 { font-size: 14px; font-weight: 500; color: #89b4fa; margin-bottom: 16px; text-transform: uppercase; letter-spacing: .06em; }
+.input-row { display: flex; gap: 10px; }
+input, textarea { background: #0f0f13; border: 1px solid #2a2a3e; border-radius: 8px; color: #e1e1e6; font-size: 14px; padding: 10px 14px; outline: none; transition: border-color .15s; width: 100%; font-family: inherit; }
+input:focus, textarea:focus { border-color: #89b4fa; }
+textarea { resize: vertical; min-height: 80px; }
+button { background: #89b4fa; color: #0f0f13; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity .15s; }
+button:hover { opacity: .85; }
+button:disabled { opacity: .4; cursor: not-allowed; }
+.status { font-size: 13px; margin-top: 10px; color: #a6adc8; }
+.status.success { color: #a6e3a1; }
+.status.error { color: #f38ba8; }
+.answer-box { background: #0f0f13; border: 1px solid #2a2a3e; border-radius: 8px; padding: 20px; margin-top: 16px; }
+.answer-text { font-size: 14px; line-height: 1.8; color: #cdd6f4; white-space: pre-wrap; }
+.sources { margin-top: 16px; }
+.sources h3 { font-size: 12px; color: #89b4fa; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+.source-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #1e1e2e; border-radius: 6px; margin-bottom: 6px; font-size: 13px; }
+.source-fn { color: #a6e3a1; font-family: monospace; font-weight: 600; }
+.source-path { color: #a6adc8; }
+.source-line { color: #f9e2af; font-family: monospace; margin-left: auto; }
+.loader { display: inline-block; width: 14px; height: 14px; border: 2px solid #2a2a3e; border-top-color: #89b4fa; border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Codebase Assistant</h1>
+  <span>AI-Powered Repository Intelligence</span>
+</div>
+<div class="container">
+  <div class="section">
+    <h2>Add Repository</h2>
+    <div class="input-row">
+      <input id="repoUrl" placeholder="https://github.com/pallets/flask" />
+      <input id="repoName" placeholder="flask" style="max-width:180px" />
+      <button onclick="addRepo()">Index Repo</button>
+    </div>
+    <div id="repoStatus" class="status"></div>
+  </div>
+  <div class="section">
+    <h2>Ask a Question</h2>
+    <div class="input-row" style="margin-bottom:10px">
+      <input id="queryRepo" placeholder="repo name (e.g. flask)" style="max-width:200px" />
+    </div>
+    <div class="input-row">
+      <textarea id="question" placeholder="How does Flask handle routing?"></textarea>
+      <button onclick="askQuestion()" style="align-self:flex-end">Ask</button>
+    </div>
+    <div id="queryStatus" class="status"></div>
+    <div id="answerBox"></div>
+  </div>
+</div>
+<script>
+const API = 'http://localhost:8000';
+async function addRepo() {
+  const url = document.getElementById('repoUrl').value.trim();
+  const name = document.getElementById('repoName').value.trim();
+  const status = document.getElementById('repoStatus');
+  if (!url || !name) { status.textContent = 'Please fill in both fields.'; status.className = 'status error'; return; }
+  status.innerHTML = '<span class="loader"></span>Submitting...';
+  status.className = 'status';
+  try {
+    const res = await fetch(API + '/repo/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ repo_url: url, repo_name: name }) });
+    const data = await res.json();
+    status.innerHTML = 'Indexing started. Task ID: ' + data.task_id;
+    status.className = 'status success';
+  } catch(e) { status.textContent = 'Error: ' + e.message; status.className = 'status error'; }
+}
+async function askQuestion() {
+  const repo = document.getElementById('queryRepo').value.trim();
+  const question = document.getElementById('question').value.trim();
+  const status = document.getElementById('queryStatus');
+  const box = document.getElementById('answerBox');
+  if (!repo || !question) { status.textContent = 'Please fill in repo name and question.'; status.className = 'status error'; return; }
+  status.innerHTML = '<span class="loader"></span>Searching codebase...';
+  status.className = 'status';
+  box.innerHTML = '';
+  try {
+    const res = await fetch(API + '/query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ repo_name: repo, question: question }) });
+    const data = await res.json();
+    status.textContent = data.cached ? 'Answered from cache' : 'Answer generated';
+    status.className = 'status success';
+    box.innerHTML = '<div class="answer-box"><div class="answer-text">' + data.answer + '</div><div class="sources"><h3>Sources</h3>' + data.sources.map(s => '<div class="source-item"><span class="source-fn">' + s.function_name + '</span><span class="source-path">' + s.file_path + '</span><span class="source-line">line ' + s.line_number + '</span></div>').join('') + '</div></div>';
+  } catch(e) { status.textContent = 'Error: ' + e.message; status.className = 'status error'; }
+}
+</script>
+</body>
+</html>
