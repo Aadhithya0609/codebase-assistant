@@ -14,18 +14,11 @@ def build_context(chunks: list[dict]) -> str:
     fitted = fits_in_context(compressed, max_total_chars=8000)
     context = ""
     for i, chunk in enumerate(fitted):
-        context += f"
---- Chunk {i+1} ---
-"
-        context += f"File: {chunk['file_path']}
-"
-        context += f"Function: {chunk['function_name']}
-"
-        context += f"Line: {chunk['line_number']}
-"
-        context += f"Code:
-{chunk['chunk_text']}
-"
+        context += "\n--- Chunk " + str(i+1) + " ---\n"
+        context += "File: " + chunk["file_path"] + "\n"
+        context += "Function: " + chunk["function_name"] + "\n"
+        context += "Line: " + str(chunk["line_number"]) + "\n"
+        context += "Code:\n" + chunk["chunk_text"] + "\n"
     return context
 
 def generate_answer(query: str, chunks: list[dict]) -> dict:
@@ -33,10 +26,7 @@ def generate_answer(query: str, chunks: list[dict]) -> dict:
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": "Code context:
-" + context + "
-
-Question: " + query}
+        {"role": "user", "content": "Code context:\n" + context + "\n\nQuestion: " + query}
     ]
 
     response = client.chat.completions.create(

@@ -2,29 +2,21 @@ def compress_chunks(chunks: list[dict], max_chars_per_chunk: int = 2000) -> list
     compressed = []
     for chunk in chunks:
         text = chunk["chunk_text"]
-
         if len(text) <= max_chars_per_chunk:
             compressed.append(chunk)
             continue
-
-        lines = text.split("
-")
+        lines = text.splitlines()
         kept = []
         total = 0
-
         for line in lines:
             if total + len(line) > max_chars_per_chunk:
                 break
             kept.append(line)
             total += len(line)
-
         compressed.append({
             **chunk,
-            "chunk_text": "
-".join(kept) + "
-... [truncated]"
+            "chunk_text": "\n".join(kept) + "\n... [truncated]"
         })
-
     return compressed
 
 def fits_in_context(chunks: list[dict], max_total_chars: int = 8000) -> list[dict]:
