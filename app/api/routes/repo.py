@@ -16,7 +16,7 @@ class RepoResponse(BaseModel):
 @router.post("/repo/add", response_model=RepoResponse)
 async def add_repo(request: RepoRequest):
     from app.indexing.celery_tasks import index_repo_task
-    target_dir = f"/tmp/repos/{request.repo_name}"
+    target_dir = f"/home/{__import__('os').getenv('USER')}/codebase-assistant/repos/{request.repo_name}"
 
     task = index_repo_task.delay(
         request.repo_url,
