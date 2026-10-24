@@ -92,7 +92,7 @@ pip install -r requirements.txt
 ### Environment Variables
 
 Create a `.env` file:
-POSTGRES_URL=postgresql://aadhi:aadhi123@localhost:5432/codebase_assistant
+POSTGRES_URL=postgresql://aadhi:your_password@localhost:5432/codebase_assistant
 REDIS_URL=redis://localhost:6380
 GROQ_API_KEY=your_groq_api_key_here
 OPENAI_API_KEY=your_openai_api_key_here
